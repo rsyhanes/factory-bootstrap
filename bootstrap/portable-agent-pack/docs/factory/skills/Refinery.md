@@ -97,7 +97,7 @@ Refinery should maintain explicit traceability between:
 - business rules and expected behaviors
 - assumptions and open questions
 - new requirements and the runtime artifacts that depend on them
-- when brownfield: target product intent and Cartographer as-built findings (`OBS-*`, `PAR-*`) that constrain parity, migration, or intentional break-from-legacy decisions
+- when brownfield: target product intent and Cartographer as-built findings (`CAP-*`, `OBS-*`, `BR-*`, `INT-*`, `PAR-*`) that constrain parity, migration, or intentional break-from-legacy decisions — **read and cite** Cartographer; do **not** reverse-engineer the legacy codebase yourself
 
 ## Inputs
 
@@ -193,7 +193,8 @@ Identify:
 - current lifecycle phase
 - the active request and scope boundary
 - any existing upstream runtime outputs that constrain the specification
-- legacy as-built constraints and parity musts when Cartographer artifacts exist (Refinery still owns *target* product intent, not as-built truth)
+- legacy as-built constraints and parity musts when Cartographer artifacts exist — **cite** CAP/OBS/BR/INT/PAR IDs; do not re-map the system from source (Refinery still owns *target* product intent, not as-built truth)
+- Cartographer **Quality Self-Check** / readiness: if as-built is `not-ready` and brownfield parity matters, prefer routing back to Cartographer rather than inventing legacy truth
 - known blockers or open questions recorded in runtime artifacts
 - current acceptance expectations already captured in the runtime harness
 
@@ -301,6 +302,7 @@ Refinery must not:
 - ignore relevant runtime harness context or repository request evidence
 - leave material product intent out of the canonical Refinery runtime artifact
 - write canonical Factory product artifacts outside `/.factory/`
+- reverse-engineer or replace Cartographer as-built truth when cartographer artifacts exist (or should exist) for brownfield work
 
 If the work starts answering **how the system should be built**, it has left the Refinery domain.
 

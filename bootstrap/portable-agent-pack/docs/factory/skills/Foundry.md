@@ -112,7 +112,7 @@ Foundry should maintain explicit traceability between:
 - system boundaries and responsibilities
 - assumptions and tradeoffs
 - new technical decisions and the runtime artifacts that depend on them
-- when brownfield: Cartographer `OBS-*` / `INT-*` / `PAR-*` findings and design choices that preserve, replace, or intentionally break legacy behavior
+- when brownfield: Cartographer `CAP-*` / `OBS-*` / `BR-*` / `INT-*` / `PAR-*` findings and design choices that preserve, replace, or intentionally break legacy behavior — **read and cite** Cartographer; do **not** reverse-engineer the legacy system as a substitute for cartographer artifacts
 
 ## Inputs
 
@@ -231,8 +231,9 @@ Identify:
 - the scope boundaries
 - the acceptance expectations
 - any existing upstream runtime outputs that constrain the design
-- legacy as-built constraints, integrations, and parity risks when Cartographer artifacts exist
-- the repository and platform realities that shape the design
+- legacy as-built constraints, integrations, rules, and parity risks when Cartographer artifacts exist — **cite** CAP/OBS/BR/INT/PAR; do not re-derive as-built maps from scratch
+- Cartographer Quality Self-Check: if as-built is incomplete and brownfield design depends on it, surface the gap rather than inventing legacy structure
+- the repository and platform realities that shape the design (implementation context, not a second cartographer pass)
 - relevant technical constraints already captured in runtime artifacts
 
 ### 2. Extract Technical Demands
@@ -353,6 +354,7 @@ Foundry must not:
 - ignore relevant runtime harness context or repository realities
 - leave material architectural direction out of the canonical Foundry runtime artifact
 - write canonical Factory design artifacts outside `/.factory/`
+- reverse-engineer or replace Cartographer as-built truth when cartographer artifacts exist (or should exist) for brownfield work
 
 If the work no longer explains **how the system should be shaped to fulfill the product intent**, it has left the Foundry domain.
 

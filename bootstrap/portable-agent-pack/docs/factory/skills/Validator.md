@@ -121,7 +121,7 @@ Validator should maintain explicit traceability between:
 - Work Orders and resulting validation status
 - defects and the requirements or behaviors they violate
 - final verification outcomes and the runtime artifacts they affect
-- when parity is in scope: Cartographer `OBS-*` / `PAR-*` and verification checks that prove match, intentional divergence, or unresolved gap
+- when parity is in scope: Cartographer `OBS-*` / `BR-*` / `PAR-*` (and `INT-*` / `CAP-*` as needed) and verification checks that prove match, intentional divergence, or unresolved gap — **read and cite** Cartographer oracles; do **not** invent a parallel as-built model
 
 ## Inputs
 
@@ -234,7 +234,7 @@ Identify:
 - the acceptance criteria
 - the critical scenarios
 - the behaviors that must be true
-- legacy parity oracles (`OBS-*`, `PAR-*`) when migration or match-legacy criteria apply
+- legacy parity oracles (`OBS-*`, `BR-*`, `PAR-*`, and related CAP/INT) when migration or match-legacy criteria apply — cite cartographer IDs as the as-built source of truth
 - previously recorded runtime verification status and known gaps
 
 ### 2. Read the Technical and Planning Context
@@ -351,6 +351,7 @@ Validator must not:
 - ignore relevant runtime harness context or repository evidence
 - leave material verification status out of the canonical Validator runtime artifact
 - write canonical Factory verification artifacts outside `/.factory/`
+- reverse-engineer or replace Cartographer as-built truth when parity verification depends on cartographer oracles
 
 If the work no longer explains **whether the implemented code has been proven to satisfy the original acceptance criteria**, it has left the Validator domain.
 
