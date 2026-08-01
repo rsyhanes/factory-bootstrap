@@ -66,7 +66,7 @@ Validator assumes the Factory workspace has already been initialized.
 
 If `/.factory/` or its required canonical artifacts are missing, the correct recovery action is to:
 
-- run the Factory bootstrap script (canonical framework implementation: `bootstrap/scripts/init-factory.ps1`), or
+- run the Factory bootstrap script (canonical framework implementation: `bootstrap/scripts/init-factory.ps1 or bootstrap/scripts/init-factory.sh`), or
 - instruct the agent to `init factory`
 
 Validator should not treat missing Factory workspace artifacts as a signal to invent alternate non-canonical artifact locations.

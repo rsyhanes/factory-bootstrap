@@ -94,7 +94,7 @@ If `/.factory/` does not exist, initialize the Factory first.
 
 If the Factory runtime workspace is missing:
 
-- run `bootstrap/scripts/init-factory.ps1`, or
+- run `bootstrap/scripts/init-factory.ps1` (Windows) or `bootstrap/scripts/init-factory.sh` (Linux/macOS), or
 - instruct the agent to `init factory`
 
 Do not invent alternate SDLC artifact locations when initialization is missing.

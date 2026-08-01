@@ -55,17 +55,18 @@ Meaning:
 - avoid overwriting meaningful existing content by default
 - initialize lifecycle state for Factory use
 
-### 2. Bootstrap script
-Canonical framework-repository implementation:
+### 2. Bootstrap scripts
+Canonical framework-repository implementations (behavioral parity):
 
-`bootstrap/scripts/init-factory.ps1`
+- `bootstrap/scripts/init-factory.ps1` — Windows PowerShell
+- `bootstrap/scripts/init-factory.sh` — Linux/macOS bash
 
-The script must implement the same target-repository bootstrap contract described in this document.
+Either script must implement the same target-repository bootstrap contract described in this document.
 
 In the current script-driven workflow, users may:
 
 1. copy the `bootstrap/` folder into the target repository
-2. run `bootstrap/scripts/init-factory.ps1`
+2. run `bootstrap/scripts/init-factory.ps1` (Windows) or `bootstrap/scripts/init-factory.sh` (Linux/macOS)
 3. verify the emitted `/.factory/` runtime workspace and any local reference docs
 4. delete the copied `bootstrap/` folder if it is no longer needed
 
@@ -315,9 +316,10 @@ Bootstrap initialization is complete when:
 
 ## Recommended Bootstrap Script Location
 
-The bootstrap script should live outside `.factory/`:
+The bootstrap scripts should live outside `.factory/`:
 
-- `bootstrap/scripts/init-factory.ps1`
+- `bootstrap/scripts/init-factory.ps1` (Windows PowerShell)
+- `bootstrap/scripts/init-factory.sh` (Linux/macOS bash)
 
 Rationale:
 
