@@ -148,13 +148,13 @@ Current target-project Factory lifecycle state used to reduce drift.
 Canonical bootstrap contract materialized inside the target repository.
 
 ### `/.factory/cartographer/system-spec.md`
-Canonical as-built narrative index (scope, summary, capability index, open questions). Detail lives in ID ledgers.
+Canonical as-built narrative index and structural skeleton (pass mode, scope, evidence inventory, surface inventory, capability tree, process index, data/state model, operational notes, open questions, **quality self-check**). Detail lives in ID ledgers.
 
 ### `/.factory/cartographer/behavior-catalog.md`
-Cumulative ledger of observed legacy behaviors (`OBS-NNN`).
+Cumulative ledger of observed legacy behaviors (`OBS-NNN`) and first-class business rules (`BR-NNN`, condition→outcome), including decisions, exceptions, and controls on behaviors.
 
 ### `/.factory/cartographer/integration-map.md`
-Cumulative ledger of external integrations and system boundaries (`INT-NNN`).
+Cumulative ledger of external integrations and system boundaries (`INT-NNN`), including failure, retry, and reconciliation notes when known.
 
 ### `/.factory/cartographer/parity-risks.md`
 Cumulative ledger of brownfield parity risks, quirks, and evidence gaps (`PAR-NNN`).

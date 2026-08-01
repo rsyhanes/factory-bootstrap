@@ -154,7 +154,7 @@ Each finding should be independently understandable.
 | --- | --- |
 | **ID** | `FIND-NNN` (monotonic within the project; never reuse for different issues) |
 | **Severity** | `info` \| `warn` \| `block` |
-| **Category** | e.g. `phase-mismatch`, `upstream-gap`, `traceability`, `ledger-hygiene`, `open-decision`, `stale-work`, `operator-posture`, `brownfield-parity` |
+| **Category** | e.g. `phase-mismatch`, `upstream-gap`, `traceability`, `ledger-hygiene`, `open-decision`, `stale-work`, `operator-posture`, `brownfield-parity`, `cartographer-gates` |
 | **Summary** | One line |
 | **Evidence** | Paths, quotes, id references (WO/TEST/ADR/OBS/PAR) |
 | **Impact** | What goes wrong if ignored |
@@ -219,6 +219,7 @@ Prefer a short ranked brief with the full register under Findings.
 - Decision hygiene: …
 - Traceability: …
 - Brownfield / parity (when in scope): …
+- Cartographer gates (when in scope): ready | not-ready | n/a
 
 ## Findings
 
@@ -245,6 +246,36 @@ Check categories appropriate to mode and project type:
 - **Stale work** — blockers/open questions unchanged across phase moves  
 - **Operator posture** — skill about to run is a poor fit for current evidence  
 - **Brownfield / parity** — open `PAR-*` while verification claims pass without parity evidence; OBS/PAR not referenced when migration is in scope  
+- **Cartographer quality gates** — when brownfield / as-built work is in scope, audit Cartographer completeness against the Cartographer quality gates and the **Quality Self-Check** in `system-spec.md` (see below)
+
+### Cartographer gate audit (brownfield)
+
+When the project is brownfield, migration/parity is in scope, or cartographer artifacts are claimed complete / are the upstream for later skills, Controller **must** assess Cartographer output for process readiness.
+
+**Sources to read**
+
+- `/.factory/cartographer/system-spec.md` — pass mode, scope, CAP tree, process index, evidence inventory, **Quality Self-Check**
+- `/.factory/cartographer/behavior-catalog.md` — `OBS-*`, `BR-*`
+- `/.factory/cartographer/integration-map.md` — `INT-*`
+- `/.factory/cartographer/parity-risks.md` — `PAR-*`
+- Cartographer quality gates (framework package `checks/quality-gates.md`, or the portable skill’s inlined gates)
+
+**What “enforce” means here (advisory stewardship)**
+
+- Controller **does not** edit cartographer (or any other skill) artifacts.
+- Controller **does not** hard-stop other agents by rewriting their trees.
+- Controller **does** raise **`block`** findings and operator brief language when material gates fail, so the human treats **next stages as blocked** until Cartographer is re-run or the human explicitly risk-accepts (`acknowledged` / `wontfix` on the FIND).
+
+**Emit `block` (category `cartographer-gates` or `upstream-gap`) when, for a deep pass (`bounded-deep` / `targeted` / `parity-forensic`) claimed ready or used as upstream:**
+
+- Pass mode or scope missing
+- Quality Self-Check missing, or claims `ready` while material depth is absent (no CAP tree, no process/exception coverage, no `BR-*` where rules clearly apply, thin `INT-*` without failure notes, no open questions covering gaps)
+- Self-check says `not-ready` but `state.md` / operator path advances to Refinery, Foundry, Planner, Assembler, or Validator as if as-built were complete
+- Deep completeness claimed under `orientation` mode
+
+**Preflight before Refinery / Foundry / Planner / Validator on brownfield:** treat failed cartographer gates as **do not proceed** in the operator brief; recommended skill is Cartographer (with mode and gap list), not the downstream skill.
+
+**Orientation passes:** allow thin depth; still `block` if the operator is about to treat orientation output as full as-built truth for migration.
 
 ## Working Principles
 
@@ -308,8 +339,9 @@ If the work no longer explains **whether the Factory is being run coherently and
 Controller should instead answer:
 
 - What process integrity issues are open?
+- Are Cartographer quality gates satisfied for brownfield upstream readiness?
 - What is the recommended next skill and why?
-- What should the operator not do yet?
+- What should the operator not do yet (including blocked stages)?
 - What should be written to `/.factory/controller/report.md`?
 
 ## Failure Mode

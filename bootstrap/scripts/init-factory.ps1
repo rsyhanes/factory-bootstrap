@@ -292,44 +292,92 @@ $cartographerSystemSpecTemplate = @'
 Not started
 
 ## Purpose
-Canonical **narrative index** for as-built legacy truth. Detail lives in ID ledgers:
+Canonical **narrative index** and structural skeleton for as-built legacy truth. Detail lives in ID ledgers:
 - behaviors → `behavior-catalog.md` (`OBS-*`)
+- business rules → `behavior-catalog.md` (`BR-*`)
 - integrations → `integration-map.md` (`INT-*`)
 - parity risks → `parity-risks.md` (`PAR-*`)
+
+Run the Cartographer analysis ladder before filling catalogs: evidence inventory → surface → capability tree → processes → BR/state/data → integrations → OBS/BR/INT/PAR → quality self-check.
+Default pass mode is **bounded-deep** unless the operator explicitly requests orientation.
+
+## Pass Mode
+- Mode: orientation | bounded-deep | targeted | parity-forensic
+- Objective:
+- Rationale:
 
 ## Scope of Study
 - Included paths / services:
 - Entry points in scope:
+- Integrations in scope:
 - Explicit exclusions:
+- Time / branch boundary:
+
+## Evidence Inventory
+| Source class | What was used | Gaps |
+| --- | --- | --- |
+| Code | | |
+| Tests | | |
+| Config / schema | | |
+| Jobs / scripts | | |
+| Docs / runbooks | | |
+| Logs / data | | |
 
 ## System Summary
 - Purpose:
 - Major actors:
-- Major capabilities:
+- Operational context:
 
-## Capability Index (optional CAP-*)
-| ID | Capability | Primary OBS / notes |
-| --- | --- | --- |
-| | | |
+## Surface Inventory
+- Entry points:
+- Packages / modules:
+- Jobs / batch:
+- Persistence boundaries:
+- Outbound I/O:
+
+## Capability Tree (CAP-*)
+| ID | Capability | Parent | Primary OBS / process | Confidence |
+| --- | --- | --- | --- | --- |
+| | | | | |
+
+## Process Index
+| Process | CAP | Happy path | Exceptions | Related OBS |
+| --- | --- | --- | --- | --- |
+| | | | | |
 
 ## Data and State Model
-- Important entities:
+- Important entities and meanings:
+- Source of truth:
 - State transitions:
 - Persistence boundaries:
+- Known data traps (overloaded fields, sentinels, batch-only fields):
 
-## User-Visible Flows (summary)
-- Flow → related OBS-*:
+## Operational Notes
+- Batch / delayed paths:
+- Reconciliation:
+- Workarounds (evidence-backed only):
+
+## Recovered Intent Notes (Inferred only — not requirements)
+- None yet.
 
 ## Open Questions
 - None identified for this scope. *(replace when applicable)*
 
+## Quality Self-Check
+- Mode checked:
+- Result: ready | not-ready | not-started
+- Failed or deferred gates:
+- Notes for Controller / operator:
+
 ## Ledger Pointers
+- Next free CAP: CAP-001
 - Next free OBS: OBS-001
+- Next free BR: BR-001
 - Next free INT: INT-001
 - Next free PAR: PAR-001
 
 ## Notes
-Cartographer should replace placeholders with an evidence-backed description of what the legacy system actually does. Do not dump full catalog rows here—link by ID.
+Cartographer should replace placeholders with an evidence-backed description of what the legacy system actually does. Do not dump full catalog rows here—link by ID. Stay as-built only; no target architecture or product requirements. End every pass with Quality Self-Check.
 '@
 
 $cartographerBehaviorCatalogTemplate = @'
@@ -339,29 +387,51 @@ $cartographerBehaviorCatalogTemplate = @'
 Not started
 
 ## Purpose
-Cumulative ledger of observable legacy behaviors and enforced rules (`OBS-NNN`).
+Cumulative ledger of observable legacy behaviors (`OBS-NNN`) and enforced business rules (`BR-NNN`).
 Append new IDs; preserve historical bodies. See Cartographer skill for field rules.
 
 ## Active sequence
 - Highest OBS: *(none)*
-- Next free ID: OBS-001
+- Next free OBS: OBS-001
+- Highest BR: *(none)*
+- Next free BR: BR-001
 
 ## Ledger
 
 ### OBS-001 *(template — replace or remove when writing real entries)*
 - Status: active
-- Capability:
+- Capability: CAP-…
+- Process:
 - Trigger:
+- Preconditions:
 - Inputs:
+- Decision Points:
 - Outputs:
+- Postconditions:
 - State Changes:
 - Side Effects:
-- Error Behavior:
+- Error / Exception Paths:
+- Controls / Overrides:
+- Related Rules: BR-… (or none)
 - Confidence: Observed | Inferred | Unverified | Contradicted
+- Evidence Type: code | test | config | schema | doc | log | ops | inferred
+- Evidence: `path/to/file:L..`
+- Notes:
+
+### BR-001 *(template — replace or remove when writing real entries)*
+- Status: active
+- Name:
+- Category: eligibility | calculation | validation | authorization | classification | timing | routing | retention | compliance | exception | other
+- Condition:
+- Outcome:
+- Capability: CAP-…
+- Enforced By: OBS-… and/or `path:L..`
+- Exceptions / Precedence:
+- Confidence: Observed | Inferred | Unverified | Contradicted
+- Evidence Type: code | test | config | schema | doc | log | ops | inferred
 - Evidence: `path/to/file:L..`
 - Notes:
 '@
-
 $cartographerIntegrationMapTemplate = @'
 # Cartographer Integration Map
 
@@ -381,12 +451,19 @@ Append new IDs; preserve historical bodies. See Cartographer skill for field rul
 ### INT-001 *(template — replace or remove when writing real entries)*
 - Status: active
 - Integration:
+- Business Purpose:
 - Direction: inbound | outbound | bidirectional
-- Trigger:
+- Trigger / Frequency:
+- Protocol / Contract:
 - Data Exchanged:
+- Auth / Trust Boundary:
+- Ordering / Idempotency:
 - Failure Behavior:
+- Retry / Timeout / Permanent Failure:
+- Reconciliation:
 - Calling Components:
 - Confidence: Observed | Inferred | Unverified | Contradicted
+- Evidence Type: code | test | config | schema | doc | log | ops | inferred
 - Evidence: `path/to/file:L..`
 '@
 

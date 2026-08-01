@@ -109,10 +109,14 @@ Choose the next Factory skill based on the current runtime state and missing ups
 - reverse-engineering artifacts are not yet established
 - or an existing as-built ledger must be extended for a new surface (append IDs; do not wipe)
 
+Cartographer must run an analysis ladder (evidence → surface → capability tree → processes → BR/state/data → integrations) and a **quality self-check** before claiming handoff. Default mode is `bounded-deep` unless orientation is explicitly requested. Stay as-built only.
+
+Other skills **read and cite** Cartographer IDs on brownfield work; they must not reverse-engineer a parallel as-built model. Controller may raise advisory **block** findings when cartographer gates fail (it does not rewrite cartographer artifacts).
+
 Primary outputs:
-- `/.factory/cartographer/system-spec.md` (narrative index + scope)
-- `/.factory/cartographer/behavior-catalog.md` (cumulative `OBS-NNN`)
-- `/.factory/cartographer/integration-map.md` (cumulative `INT-NNN`)
+- `/.factory/cartographer/system-spec.md` (mode, scope, CAP tree, process index, quality self-check)
+- `/.factory/cartographer/behavior-catalog.md` (cumulative `OBS-NNN` and `BR-NNN`)
+- `/.factory/cartographer/integration-map.md` (cumulative `INT-NNN` with failure/recovery depth)
 - `/.factory/cartographer/parity-risks.md` (cumulative `PAR-NNN`)
 
 ### Use Refinery when:
