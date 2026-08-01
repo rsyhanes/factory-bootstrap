@@ -1,110 +1,126 @@
-[CmdletBinding()]
-param(
-    [switch]$Force
-)
+#!/usr/bin/env bash
+# Factory bootstrap initialization (Linux/macOS bash peer of init-factory.ps1)
+# Usage:
+#   bash bootstrap/scripts/init-factory.sh
+#   bash bootstrap/scripts/init-factory.sh --force
+#   bash bootstrap/scripts/init-factory.sh -f
 
-Set-StrictMode -Version Latest
-$ErrorActionPreference = 'Stop'
+set -euo pipefail
 
-$bootstrapRoot = Split-Path -Parent $PSScriptRoot
-$repoRoot = Split-Path -Parent $bootstrapRoot
-$factoryRoot = Join-Path $repoRoot '.factory'
-$portableAgentPackRoot = Join-Path $bootstrapRoot 'portable-agent-pack'
-$portableAgentRootInstructionSourcePath = Join-Path $portableAgentPackRoot 'AGENTS.md'
-$portableAgentDocsSourceRoot = Join-Path $portableAgentPackRoot 'docs'
-$portableAgentFactoryDocsSourceRoot = Join-Path $portableAgentDocsSourceRoot 'factory'
-$portableAgentSkillDocsSourceRoot = Join-Path $portableAgentFactoryDocsSourceRoot 'skills'
-$docsRoot = Join-Path $repoRoot 'docs'
-$factoryDocsRoot = Join-Path $docsRoot 'factory'
-$factorySkillDocsRoot = Join-Path $factoryDocsRoot 'skills'
-$agentsFilePath = Join-Path $repoRoot 'AGENTS.md'
+FORCE=0
+for arg in "$@"; do
+  case "$arg" in
+    --force|-f) FORCE=1 ;;
+    -h|--help)
+      cat <<'HELP'
+Factory bootstrap initialization
 
-function Ensure-Directory {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
+Usage:
+  init-factory.sh [--force|-f]
 
-    if (-not (Test-Path -LiteralPath $Path)) {
-        New-Item -ItemType Directory -Path $Path -Force | Out-Null
-        Write-Host "Created directory: $Path"
-    }
-    else {
-        Write-Host "Directory exists: $Path"
-    }
+Creates the minimum .factory/ runtime workspace (and optional portable agent docs).
+Non-destructive by default; use --force to overwrite meaningful existing files.
+HELP
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $arg" >&2
+      echo "Use --help for usage." >&2
+      exit 2
+      ;;
+  esac
+done
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BOOTSTRAP_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+REPO_ROOT="$(cd "$BOOTSTRAP_ROOT/.." && pwd)"
+FACTORY_ROOT="$REPO_ROOT/.factory"
+PORTABLE_PACK_ROOT="$BOOTSTRAP_ROOT/portable-agent-pack"
+PORTABLE_AGENTS_SRC="$PORTABLE_PACK_ROOT/AGENTS.md"
+PORTABLE_DOCS_SRC="$PORTABLE_PACK_ROOT/docs"
+PORTABLE_SKILLS_SRC="$PORTABLE_DOCS_SRC/factory/skills"
+DOCS_ROOT="$REPO_ROOT/docs"
+FACTORY_DOCS_ROOT="$DOCS_ROOT/factory"
+FACTORY_SKILL_DOCS_ROOT="$FACTORY_DOCS_ROOT/skills"
+AGENTS_FILE_PATH="$REPO_ROOT/AGENTS.md"
+
+ensure_dir() {
+  local path="$1"
+  if [[ ! -d "$path" ]]; then
+    mkdir -p "$path"
+    echo "Created directory: $path"
+  else
+    echo "Directory exists: $path"
+  fi
 }
 
-function Test-FileHasMeaningfulContent {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path
-    )
-
-    if (-not (Test-Path -LiteralPath $Path)) {
-        return $false
-    }
-
-    $content = Get-Content -LiteralPath $Path -Raw
-    return -not [string]::IsNullOrWhiteSpace($content)
+has_meaningful_content() {
+  local path="$1"
+  if [[ ! -f "$path" ]]; then
+    return 1
+  fi
+  if grep -q '[^[:space:]]' "$path" 2>/dev/null; then
+    return 0
+  fi
+  return 1
 }
 
-function Write-FactoryFile {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Path,
+write_factory_file() {
+  local path="$1"
+  local content="$2"
+  local exists=0
+  local meaningful=0
 
-        [Parameter(Mandatory = $true)]
-        [string]$Content
-    )
+  if [[ -f "$path" ]]; then
+    exists=1
+    if has_meaningful_content "$path"; then
+      meaningful=1
+    fi
+  fi
 
-    $exists = Test-Path -LiteralPath $Path
-    $hasMeaningfulContent = $false
+  if [[ "$exists" -eq 1 && "$meaningful" -eq 1 && "$FORCE" -eq 0 ]]; then
+    echo "Preserved existing file: $path"
+    return 0
+  fi
 
-    if ($exists) {
-        $hasMeaningfulContent = Test-FileHasMeaningfulContent -Path $Path
-    }
+  local parent
+  parent="$(dirname "$path")"
+  if [[ ! -d "$parent" ]]; then
+    mkdir -p "$parent"
+  fi
 
-    if ($exists -and $hasMeaningfulContent -and -not $Force) {
-        Write-Host "Preserved existing file: $Path"
-        return
-    }
+  printf '%s' "$content" > "$path"
+  if [[ -s "$path" ]]; then
+    local last
+    last="$(tail -c1 "$path" | od -An -t u1 | tr -d ' \n')"
+    if [[ "$last" != "10" ]]; then
+      printf '\n' >> "$path"
+    fi
+  fi
 
-    $parent = Split-Path -Parent $Path
-    if (-not (Test-Path -LiteralPath $parent)) {
-        New-Item -ItemType Directory -Path $parent -Force | Out-Null
-    }
-
-    [System.IO.File]::WriteAllText($Path, $Content.Replace("`n", [Environment]::NewLine))
-    if ($exists -and $Force) {
-        Write-Host "Overwrote file: $Path"
-    }
-    elseif ($exists) {
-        Write-Host "Filled empty file: $Path"
-    }
-    else {
-        Write-Host "Created file: $Path"
-    }
+  if [[ "$exists" -eq 1 && "$FORCE" -eq 1 ]]; then
+    echo "Overwrote file: $path"
+  elif [[ "$exists" -eq 1 ]]; then
+    echo "Filled empty file: $path"
+  else
+    echo "Created file: $path"
+  fi
 }
 
-function Write-TemplateFileFromSource {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$SourcePath,
-
-        [Parameter(Mandatory = $true)]
-        [string]$DestinationPath
-    )
-
-    if (-not (Test-Path -LiteralPath $SourcePath)) {
-        Write-Warning "Template source missing: $SourcePath"
-        return
-    }
-
-    $content = Get-Content -LiteralPath $SourcePath -Raw
-    Write-FactoryFile -Path $DestinationPath -Content $content
+write_from_source() {
+  local source_path="$1"
+  local dest_path="$2"
+  if [[ ! -f "$source_path" ]]; then
+    echo "Warning: Template source missing: $source_path" >&2
+    return 0
+  fi
+  local content
+  content="$(cat "$source_path")"
+  write_factory_file "$dest_path" "$content"
 }
 
-$initContract = @'
+initContract=$(cat <<'EOF_initContract'
+
 # Factory Bootstrap Initialization Contract
 
 ## Purpose
@@ -211,9 +227,11 @@ When first created in a target repository, `/.factory/state.md` should indicate:
 ## One-Line Definition
 
 **Factory bootstrap initialization creates the minimum canonical `.factory/` runtime workspace safely, repeatably, and without overwriting meaningful existing project artifacts by default.**
-'@
+EOF_initContract
+)
 
-$prdTemplate = @'
+prdTemplate=$(cat <<'EOF_prdTemplate'
+
 # Product Requirements Document
 
 ## Status
@@ -228,9 +246,11 @@ This is the canonical starting product request for this repository inside **The 
 ## Notes
 - Refinery should trace product specifications back to this document.
 - Foundry, Planner, Assembler, and Validator should preserve traceability to this source request.
-'@
+EOF_prdTemplate
+)
 
-$stateTemplate = @'
+stateTemplate=$(cat <<'EOF_stateTemplate'
+
 # Factory State
 
 ## Purpose
@@ -286,9 +306,11 @@ None
 
 ## Next Expected Action
 Populate `/.factory/prd.md` or invoke Refinery
-'@
+EOF_stateTemplate
+)
 
-$cartographerSystemSpecTemplate = @'
+cartographerSystemSpecTemplate=$(cat <<'EOF_cartographerSystemSpecTemplate'
+
 # Cartographer System Specification
 
 ## Status
@@ -381,9 +403,11 @@ Default pass mode is **bounded-deep** unless the operator explicitly requests or
 
 ## Notes
 Cartographer should replace placeholders with an evidence-backed description of what the legacy system actually does. Do not dump full catalog rows here—link by ID. Stay as-built only; no target architecture or product requirements. End every pass with Quality Self-Check.
-'@
+EOF_cartographerSystemSpecTemplate
+)
 
-$cartographerBehaviorCatalogTemplate = @'
+cartographerBehaviorCatalogTemplate=$(cat <<'EOF_cartographerBehaviorCatalogTemplate'
+
 # Cartographer Behavior Catalog
 
 ## Status
@@ -434,8 +458,11 @@ Append new IDs; preserve historical bodies. See Cartographer skill for field rul
 - Evidence Type: code | test | config | schema | doc | log | ops | inferred
 - Evidence: `path/to/file:L..`
 - Notes:
-'@
-$cartographerIntegrationMapTemplate = @'
+EOF_cartographerBehaviorCatalogTemplate
+)
+
+cartographerIntegrationMapTemplate=$(cat <<'EOF_cartographerIntegrationMapTemplate'
+
 # Cartographer Integration Map
 
 ## Status
@@ -468,9 +495,11 @@ Append new IDs; preserve historical bodies. See Cartographer skill for field rul
 - Confidence: Observed | Inferred | Unverified | Contradicted
 - Evidence Type: code | test | config | schema | doc | log | ops | inferred
 - Evidence: `path/to/file:L..`
-'@
+EOF_cartographerIntegrationMapTemplate
+)
 
-$cartographerParityRisksTemplate = @'
+cartographerParityRisksTemplate=$(cat <<'EOF_cartographerParityRisksTemplate'
+
 # Cartographer Parity Risks
 
 ## Status
@@ -495,9 +524,11 @@ Append new IDs; preserve historical bodies. See Cartographer skill for field rul
 - Evidence Gap:
 - Recommended Investigation:
 - Evidence: `path/to/file:L..`
-'@
+EOF_cartographerParityRisksTemplate
+)
 
-$refinerySpecTemplate = @'
+refinerySpecTemplate=$(cat <<'EOF_refinerySpecTemplate'
+
 # Refinery Specification
 
 ## Status
@@ -512,9 +543,11 @@ This is the canonical product-intent specification artifact for Refinery.
 
 ## Notes
 Refinery should replace this placeholder with a product specification focused on intent, scope, users, scenarios, and acceptance criteria.
-'@
+EOF_refinerySpecTemplate
+)
 
-$foundryDesignTemplate = @'
+foundryDesignTemplate=$(cat <<'EOF_foundryDesignTemplate'
+
 # Foundry Design
 
 ## Status
@@ -576,9 +609,11 @@ This is the canonical Foundry summary and architectural narrative.
 
 ## Notes
 Foundry should replace this placeholder with the technical intent, architecture narrative, traceability to supporting Mermaid-based C4 views, decisions, constraints, and implementation guardrails.
-'@
+EOF_foundryDesignTemplate
+)
 
-$foundrySystemContextTemplate = @'
+foundrySystemContextTemplate=$(cat <<'EOF_foundrySystemContextTemplate'
+
 # Foundry System Context
 
 ## Status
@@ -625,9 +660,11 @@ flowchart LR
 
 ## Notes
 Foundry should keep this artifact stakeholder-readable, Mermaid-based, and limited to C4 Level 1 context rather than internal container detail.
-'@
+EOF_foundrySystemContextTemplate
+)
 
-$foundryContainerViewTemplate = @'
+foundryContainerViewTemplate=$(cat <<'EOF_foundryContainerViewTemplate'
+
 # Foundry Container View
 
 ## Status
@@ -681,9 +718,11 @@ flowchart LR
 
 ## Notes
 Foundry should keep this artifact Mermaid-based, C4 Level 2 focused, and explicit about responsibilities, interactions, and boundaries.
-'@
+EOF_foundryContainerViewTemplate
+)
 
-$foundryComponentViewsTemplate = @'
+foundryComponentViewsTemplate=$(cat <<'EOF_foundryComponentViewsTemplate'
+
 # Foundry Component Views
 
 ## Status
@@ -731,9 +770,11 @@ flowchart LR
 
 ## Notes
 Foundry should keep this artifact Mermaid-based, selective, and focused on meaningful internal decomposition rather than implementation minutiae.
-'@
+EOF_foundryComponentViewsTemplate
+)
 
-$foundryAdrIndexTemplate = @'
+foundryAdrIndexTemplate=$(cat <<'EOF_foundryAdrIndexTemplate'
+
 # Foundry ADR Index
 
 ## Status
@@ -764,9 +805,11 @@ This is the canonical architectural decision register and index for Foundry ADRs
 
 ## Notes
 Foundry should use this artifact as the scannable index for architectural decisions while keeping durable decision bodies in individual ADR files when needed.
-'@
+EOF_foundryAdrIndexTemplate
+)
 
-$workOrdersTemplate = @'
+workOrdersTemplate=$(cat <<'EOF_workOrdersTemplate'
+
 # Planner Work Orders
 
 ## Status
@@ -793,9 +836,11 @@ Planner appends new `WO-NNN` entries over time. Do **not** replace this file wit
 - Concrete Changes Required:
 - Completion Condition:
 - Validation Method:
-'@
+EOF_workOrdersTemplate
+)
 
-$validationPlanTemplate = @'
+validationPlanTemplate=$(cat <<'EOF_validationPlanTemplate'
+
 # Planner Validation Plan
 
 ## Status
@@ -814,9 +859,11 @@ Planner appends new `TEST-NNN` entries over time. Do **not** replace this file w
 - Action:
 - Expected Outcome:
 - Notes for Assembler:
-'@
+EOF_validationPlanTemplate
+)
 
-$executionLogTemplate = @'
+executionLogTemplate=$(cat <<'EOF_executionLogTemplate'
+
 # Assembler Execution Log
 
 ## Status
@@ -835,9 +882,11 @@ This is the canonical execution log for completed work-order activity.
 - Validation Run:
 - Result:
 - Notes:
-'@
+EOF_executionLogTemplate
+)
 
-$changeSummaryTemplate = @'
+changeSummaryTemplate=$(cat <<'EOF_changeSummaryTemplate'
+
 # Assembler Change Summary
 
 ## Status
@@ -852,9 +901,11 @@ This is the canonical implementation summary artifact for repository changes.
 - Dependency Changes:
 - Tests Added or Updated:
 - Outstanding Issues:
-'@
+EOF_changeSummaryTemplate
+)
 
-$verificationReportTemplate = @'
+verificationReportTemplate=$(cat <<'EOF_verificationReportTemplate'
+
 # Validator Verification Report
 
 ## Status
@@ -870,9 +921,11 @@ This is the canonical criteria-traceable verification artifact.
 - Acceptance Criteria Coverage:
 - Defects / Deviations:
 - Final Verification Status:
-'@
+EOF_verificationReportTemplate
+)
 
-$controllerReportTemplate = @'
+controllerReportTemplate=$(cat <<'EOF_controllerReportTemplate'
+
 # Controller Report
 
 ## Status
@@ -890,76 +943,65 @@ Controller observes the runtime harness, records findings (`FIND-NNN`), and reco
 - Recommended next skill:
 - Operator brief:
 - Findings (FIND-NNN):
-'@
+EOF_controllerReportTemplate
+)
 
-Ensure-Directory -Path $factoryRoot
-Ensure-Directory -Path (Join-Path $factoryRoot 'cartographer')
-Ensure-Directory -Path (Join-Path $factoryRoot 'refinery')
-Ensure-Directory -Path (Join-Path $factoryRoot 'foundry')
-Ensure-Directory -Path (Join-Path $factoryRoot 'foundry\adr')
-Ensure-Directory -Path (Join-Path $factoryRoot 'planner')
-Ensure-Directory -Path (Join-Path $factoryRoot 'assembler')
-Ensure-Directory -Path (Join-Path $factoryRoot 'validator')
-Ensure-Directory -Path (Join-Path $factoryRoot 'controller')
 
-if ((Test-Path -LiteralPath $portableAgentDocsSourceRoot) -or (Test-Path -LiteralPath $portableAgentSkillDocsSourceRoot)) {
-    Ensure-Directory -Path $docsRoot
-    Ensure-Directory -Path $factoryDocsRoot
-    Ensure-Directory -Path $factorySkillDocsRoot
-}
+ensure_dir "$FACTORY_ROOT"
+ensure_dir "$FACTORY_ROOT/cartographer"
+ensure_dir "$FACTORY_ROOT/refinery"
+ensure_dir "$FACTORY_ROOT/foundry"
+ensure_dir "$FACTORY_ROOT/foundry/adr"
+ensure_dir "$FACTORY_ROOT/planner"
+ensure_dir "$FACTORY_ROOT/assembler"
+ensure_dir "$FACTORY_ROOT/validator"
+ensure_dir "$FACTORY_ROOT/controller"
 
-Write-FactoryFile -Path (Join-Path $factoryRoot 'init.md') -Content $initContract
-Write-FactoryFile -Path (Join-Path $factoryRoot 'prd.md') -Content $prdTemplate
+if [[ -d "$PORTABLE_DOCS_SRC" || -d "$PORTABLE_SKILLS_SRC" || -f "$PORTABLE_AGENTS_SRC" ]]; then
+  ensure_dir "$DOCS_ROOT"
+  ensure_dir "$FACTORY_DOCS_ROOT"
+  ensure_dir "$FACTORY_SKILL_DOCS_ROOT"
+fi
 
-Write-FactoryFile -Path (Join-Path $factoryRoot 'state.md') -Content $stateTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'cartographer\system-spec.md') -Content $cartographerSystemSpecTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'cartographer\behavior-catalog.md') -Content $cartographerBehaviorCatalogTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'cartographer\integration-map.md') -Content $cartographerIntegrationMapTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'cartographer\parity-risks.md') -Content $cartographerParityRisksTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'refinery\spec.md') -Content $refinerySpecTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'foundry\design.md') -Content $foundryDesignTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'foundry\system-context.md') -Content $foundrySystemContextTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'foundry\container-view.md') -Content $foundryContainerViewTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'foundry\component-views.md') -Content $foundryComponentViewsTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'foundry\adr\index.md') -Content $foundryAdrIndexTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'planner\work-orders.md') -Content $workOrdersTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'planner\validation-plan.md') -Content $validationPlanTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'assembler\execution-log.md') -Content $executionLogTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'assembler\change-summary.md') -Content $changeSummaryTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'validator\verification-report.md') -Content $verificationReportTemplate
-Write-FactoryFile -Path (Join-Path $factoryRoot 'controller\report.md') -Content $controllerReportTemplate
+write_factory_file "$FACTORY_ROOT/init.md" "$initContract"
+write_factory_file "$FACTORY_ROOT/prd.md" "$prdTemplate"
+write_factory_file "$FACTORY_ROOT/state.md" "$stateTemplate"
+write_factory_file "$FACTORY_ROOT/cartographer/system-spec.md" "$cartographerSystemSpecTemplate"
+write_factory_file "$FACTORY_ROOT/cartographer/behavior-catalog.md" "$cartographerBehaviorCatalogTemplate"
+write_factory_file "$FACTORY_ROOT/cartographer/integration-map.md" "$cartographerIntegrationMapTemplate"
+write_factory_file "$FACTORY_ROOT/cartographer/parity-risks.md" "$cartographerParityRisksTemplate"
+write_factory_file "$FACTORY_ROOT/refinery/spec.md" "$refinerySpecTemplate"
+write_factory_file "$FACTORY_ROOT/foundry/design.md" "$foundryDesignTemplate"
+write_factory_file "$FACTORY_ROOT/foundry/system-context.md" "$foundrySystemContextTemplate"
+write_factory_file "$FACTORY_ROOT/foundry/container-view.md" "$foundryContainerViewTemplate"
+write_factory_file "$FACTORY_ROOT/foundry/component-views.md" "$foundryComponentViewsTemplate"
+write_factory_file "$FACTORY_ROOT/foundry/adr/index.md" "$foundryAdrIndexTemplate"
+write_factory_file "$FACTORY_ROOT/planner/work-orders.md" "$workOrdersTemplate"
+write_factory_file "$FACTORY_ROOT/planner/validation-plan.md" "$validationPlanTemplate"
+write_factory_file "$FACTORY_ROOT/assembler/execution-log.md" "$executionLogTemplate"
+write_factory_file "$FACTORY_ROOT/assembler/change-summary.md" "$changeSummaryTemplate"
+write_factory_file "$FACTORY_ROOT/validator/verification-report.md" "$verificationReportTemplate"
+write_factory_file "$FACTORY_ROOT/controller/report.md" "$controllerReportTemplate"
 
-if ((Test-Path -LiteralPath $portableAgentDocsSourceRoot) -or (Test-Path -LiteralPath $portableAgentRootInstructionSourcePath)) {
-    Write-TemplateFileFromSource -SourcePath $portableAgentRootInstructionSourcePath -DestinationPath $agentsFilePath
-    # Pack layout: docs/operating-model.md, docs/foundry-c4-authoring-standard.md, docs/factory/skills/*.md
-    Write-TemplateFileFromSource -SourcePath (Join-Path $portableAgentDocsSourceRoot 'operating-model.md') -DestinationPath (Join-Path $factoryDocsRoot 'operating-model.md')
-    Write-TemplateFileFromSource -SourcePath (Join-Path $portableAgentDocsSourceRoot 'foundry-c4-authoring-standard.md') -DestinationPath (Join-Path $factoryDocsRoot 'foundry-c4-authoring-standard.md')
+if [[ -d "$PORTABLE_DOCS_SRC" || -d "$PORTABLE_SKILLS_SRC" || -f "$PORTABLE_AGENTS_SRC" ]]; then
+  write_from_source "$PORTABLE_AGENTS_SRC" "$AGENTS_FILE_PATH"
+  # Pack layout: docs/operating-model.md, docs/foundry-c4-authoring-standard.md, docs/factory/skills/*.md
+  write_from_source "$PORTABLE_DOCS_SRC/operating-model.md" "$FACTORY_DOCS_ROOT/operating-model.md"
+  write_from_source "$PORTABLE_DOCS_SRC/foundry-c4-authoring-standard.md" "$FACTORY_DOCS_ROOT/foundry-c4-authoring-standard.md"
 
-    $portableAgentSkillNames = @(
-        'Cartographer',
-        'Refinery',
-        'Foundry',
-        'Planner',
-        'Assembler',
-        'Validator',
-        'Controller'
-    )
+  for skillName in Cartographer Refinery Foundry Planner Assembler Validator Controller; do
+    write_from_source "$PORTABLE_SKILLS_SRC/${skillName}.md" "$FACTORY_SKILL_DOCS_ROOT/${skillName}.md"
+  done
 
-    foreach ($skillName in $portableAgentSkillNames) {
-        Write-TemplateFileFromSource -SourcePath (Join-Path $portableAgentSkillDocsSourceRoot "$skillName.md") -DestinationPath (Join-Path $factorySkillDocsRoot "$skillName.md")
-    }
+  echo "Portable Factory agent reference docs emitted under docs/factory/."
+else
+  echo "Portable Factory agent pack not found; skipped docs/factory/ emission."
+fi
 
-    Write-Host 'Portable Factory agent reference docs emitted under docs/factory/.'
-}
-else {
-    Write-Host 'Portable Factory agent pack not found; skipped docs/factory/ emission.'
-}
-
-Write-Host ''
-Write-Host 'Factory initialization completed.'
-if ($Force) {
-    Write-Host 'Mode: force overwrite enabled for existing meaningful files.'
-}
-else {
-    Write-Host 'Mode: non-destructive; existing meaningful files were preserved.'
-}
+echo ""
+echo "Factory initialization completed."
+if [[ "$FORCE" -eq 1 ]]; then
+  echo "Mode: force overwrite enabled for existing meaningful files."
+else
+  echo "Mode: non-destructive; existing meaningful files were preserved."
+fi

@@ -15,7 +15,9 @@ This pack exists for environments where the target repository must remain usable
 ## Expected Workflow
 
 1. Copy the entire `bootstrap/` folder into the target repository.
-2. Run `bootstrap/scripts/init-factory.ps1` from that target repo.
+2. Run the platform bootstrap script from that target repo:
+   - **Windows:** `bootstrap/scripts/init-factory.ps1`
+   - **Linux/macOS:** `bash bootstrap/scripts/init-factory.sh`
 3. The script creates:
    - the agent operating manual at `/AGENTS.md`
    - the canonical runtime workspace under `/.factory/`
