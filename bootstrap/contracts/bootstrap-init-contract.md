@@ -55,17 +55,18 @@ Meaning:
 - avoid overwriting meaningful existing content by default
 - initialize lifecycle state for Factory use
 
-### 2. Bootstrap script
-Canonical framework-repository implementation:
+### 2. Bootstrap scripts
+Canonical framework-repository implementations (behavioral parity):
 
-`bootstrap/scripts/init-factory.ps1`
+- `bootstrap/scripts/init-factory.ps1` — Windows PowerShell
+- `bootstrap/scripts/init-factory.sh` — Linux/macOS bash
 
-The script must implement the same target-repository bootstrap contract described in this document.
+Either script must implement the same target-repository bootstrap contract described in this document.
 
 In the current script-driven workflow, users may:
 
 1. copy the `bootstrap/` folder into the target repository
-2. run `bootstrap/scripts/init-factory.ps1`
+2. run `bootstrap/scripts/init-factory.ps1` (Windows) or `bootstrap/scripts/init-factory.sh` (Linux/macOS)
 3. verify the emitted `/.factory/` runtime workspace and any local reference docs
 4. delete the copied `bootstrap/` folder if it is no longer needed
 
@@ -148,13 +149,13 @@ Current target-project Factory lifecycle state used to reduce drift.
 Canonical bootstrap contract materialized inside the target repository.
 
 ### `/.factory/cartographer/system-spec.md`
-Canonical as-built narrative index (scope, summary, capability index, open questions). Detail lives in ID ledgers.
+Canonical as-built narrative index and structural skeleton (pass mode, scope, evidence inventory, surface inventory, capability tree, process index, data/state model, operational notes, open questions, **quality self-check**). Detail lives in ID ledgers.
 
 ### `/.factory/cartographer/behavior-catalog.md`
-Cumulative ledger of observed legacy behaviors (`OBS-NNN`).
+Cumulative ledger of observed legacy behaviors (`OBS-NNN`) and first-class business rules (`BR-NNN`, condition→outcome), including decisions, exceptions, and controls on behaviors.
 
 ### `/.factory/cartographer/integration-map.md`
-Cumulative ledger of external integrations and system boundaries (`INT-NNN`).
+Cumulative ledger of external integrations and system boundaries (`INT-NNN`), including failure, retry, and reconciliation notes when known.
 
 ### `/.factory/cartographer/parity-risks.md`
 Cumulative ledger of brownfield parity risks, quirks, and evidence gaps (`PAR-NNN`).
@@ -315,9 +316,10 @@ Bootstrap initialization is complete when:
 
 ## Recommended Bootstrap Script Location
 
-The bootstrap script should live outside `.factory/`:
+The bootstrap scripts should live outside `.factory/`:
 
-- `bootstrap/scripts/init-factory.ps1`
+- `bootstrap/scripts/init-factory.ps1` (Windows PowerShell)
+- `bootstrap/scripts/init-factory.sh` (Linux/macOS bash)
 
 Rationale:
 

@@ -71,7 +71,7 @@ Planner assumes the Factory workspace has already been initialized.
 
 If `/.factory/` or its required canonical artifacts are missing, the correct recovery action is to:
 
-- run the Factory bootstrap script (canonical framework implementation: `bootstrap/scripts/init-factory.ps1`), or
+- run the Factory bootstrap script (canonical framework implementation: `bootstrap/scripts/init-factory.ps1 or bootstrap/scripts/init-factory.sh`), or
 - instruct the agent to `init factory`
 
 Planner should not treat missing Factory workspace artifacts as a signal to invent alternate non-canonical artifact locations.
@@ -133,7 +133,7 @@ Planner should maintain explicit traceability between:
 - acceptance criteria and proposed tests
 - Work Orders and the runtime artifacts they advance
 - new Work Orders and prior ledger entries they continue or supersede
-- when brownfield: Work Orders and Cartographer `OBS-*` / `PAR-*` (and `INT-*` when integrations change) that the work preserves, migrates, or intentionally breaks
+- when brownfield: Work Orders and Cartographer `CAP-*` / `OBS-*` / `BR-*` / `PAR-*` (and `INT-*` when integrations change) that the work preserves, migrates, or intentionally breaks — **cite** those IDs; do **not** reverse-engineer legacy behavior outside Cartographer
 
 ## Inputs
 
@@ -390,7 +390,7 @@ Identify:
 - the system boundaries
 - the major components
 - the constraints that implementation must respect
-- legacy parity obligations from Cartographer when present (`OBS-*`, `PAR-*`, integrations)
+- legacy parity obligations from Cartographer when present (`CAP-*`, `OBS-*`, `BR-*`, `PAR-*`, `INT-*`) — read and cite; do not re-map as-built truth
 - existing runtime planning context **including all prior Work Orders and tests**
 - highest WO and TEST ids already used
 - repository facts and dependency relationships visible in code and manifests
@@ -524,6 +524,7 @@ Planner must not:
 - delete, omit, or replace prior Work Order sections when planning new work
 - delete or omit prior acceptance-test proposals when extending the validation plan
 - treat `work-orders.md` as a disposable current-sprint document
+- reverse-engineer or replace Cartographer as-built truth when cartographer artifacts exist (or should exist) for brownfield parity work
 
 If the work no longer explains **how the repository should change to realize the approved design**, it has left the Planner domain.
 
